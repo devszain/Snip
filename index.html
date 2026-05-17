@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Snip</title>
+<meta name="theme-color" content="#007AFF">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="apple-touch-icon" href="logo.png">
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+  
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #F0F8FF;
+    color: #0A1F44;
+    overflow-x: hidden;
+  }
+  
+ .header {
+    position: sticky;
+    top: 0;
+    background: rgba(240, 248, 255, 0.85);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid #D1E7FF;
+    z-index: 100;
+  }
+  
+ .header-content {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  
+ .logo {
+    display: flex;
+    align-items: center;
+  }
+  
+ .logo img {
+    height: 32px;
+    width: auto;
+  }
+  
+ .search {
+    flex: 1;
+    max-width: 600px;
+  }
+  
+ .search input {
+    width: 100%;
+    padding: 10px 16px;
+    background: #FFFFFF;
+    border: 1px solid #D1E7FF;
+    border-radius: 20px;
+    color: #0A1F44;
+    font-size: 16px;
+    outline: none;
+  }
+  
+ .search input:focus {
+    border-color: #007AFF;
+    box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.15);
+  }
+  
+ .user-section {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+ .btn {
+    padding: 8px 16px;
+    background: #007AFF;
+    border: none;
+    border-radius: 8px;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  
+ .btn:hover {
+    background: #0077ED;
+  }
+  
+ .btn-secondary {
+    background: #FFFFFF;
+    color: #0A1F44;
+    border: 1px solid #D1E7FF;
+  }
+  
+ .admin-badge {
+    background: #FF3B30;
+    color: #fff;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  
+ .username {
+    font-size: 14px;
+    font-weight: 600;
+    color: #0A1F44;
+  }
+  
+ .auth-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(10, 31, 68, 0.8);
+    z-index: 2000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+  
+ .auth-modal.active {
+    display: flex;
+  }
+  
+ .auth-box {
+    background: #FFFFFF;
+    border-radius: 16px;
+    padding: 32px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  }
+  
+ .auth-box h2 {
+    margin-bottom: 24px;
+    font-size: 24px;
+    text-align: center;
+  }
+  
+ .auth-box input {
+    width: 100%;
+    padding: 12px 16px;
+    background: #F0F8FF;
+    border: 1px solid #D1E7FF;
+    border-radius: 8px;
+    color: #0A1F44;
+    font-size: 16px;
+    margin-bottom: 16px;
+    outline: none;
+  }
+  
+ .auth-box input:focus {
+    border-color: #007AFF;
+  }
+  
+ .auth-box.btn {
+    width: 100%;
+    margin-bottom: 12px;
+  }
+  
+ .auth-toggle {
+    text-align: center;
+    font-size: 14px;
+    color: #5A7A9D;
+    cursor: pointer;
+  }
+  
+ .auth-toggle:hover {
+    color: #007AFF;
+  }
+  
+ .categories {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 16px;
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+  }
+  
+ .cat-btn {
+    padding: 8px 16px;
+    background: #FFFFFF;
+    border: 1px solid #D1E7FF;
+    border-radius: 8px;
+    color: #0A1F44;
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  
+ .cat-btn:hover {
+    background: #E6F3FF;
+  }
+  
+ .cat-btn.active {
+    background: #007AFF;
+    border-color: #007AFF;
+    color: #fff;
+  }
+  
+ .grid {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 16px 80px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+  }
+  
+ .snip-card {
+    cursor: pointer;
+    transition: transform 0.2s;
+    position: relative;
+  }
+  
+ .snip-card:hover {
+    transform: translateY(-4px);
+  }
+  
+ .snip-card.moderated {
+    opacity: 0.4;
+    border: 2px dashed #FF3B30;
+    border-radius: 12px;
+  }
+  
+ .thumb {
+    width: 100%;
+    aspect-ratio: 16/9;
+    background: #E6F3FF;
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+    border: 1px solid #D1E7FF;
+  }
+  
+ .thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+ .duration {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    background: rgba(10, 31, 68, 0.85);
+    color: #fff;
+    padding: 3px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  
+ .snip-info {
+    padding: 12px 4px;
+  }
+  
+ .snip-title {
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.4;
+    margin-bottom: 4px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  
+ .snip-meta {
+    font-size: 14px;
+    color: #5A7A9D;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+ .report-btn {
+    background: none;
+    border: none;
+    color: #5A7A9D;
+    font-size: 12px;
+    cursor: pointer;
+    padding: 4px;
+  }
+  
+ .report-btn:hover {
+    color: #FF3B30;
+  }
+  
+ .delete-btn {
+    background: #FF3B30;
+    border: none;
+    color: #fff;
+    font-size: 12px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+  }
+  
+ .player-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(240, 248, 255, 0.98);
+    z-index: 1000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+  
+ .player-modal.active {
+    display: flex;
+  }
+  
+ .player-wrapper {
+    width: 100%;
+    max-width: 900px;
+    aspect-ratio: 16/9;
+    position: relative;
+  }
+  
+ .player-wrapper iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0, 122, 255, 0.2);
+  }
+  
+ .close-btn {
+    position: absolute;
+    top: -50px;
+    right: 0;
+    background: #007AFF;
+    border: none;
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  
+ .footer {
+    text-align: center;
+    padding: 40px 16px;
+    color: #5A7A9D;
+    font-size: 14px;
+    border-top: 1px solid #D1E7FF;
+  }
+</style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-content">
+      <div class="logo">
+        <img src="logo.png" alt="Snip">
+      </div>
+      <div class="search">
+        <input type="text" id="search" placeholder="Search Snips">
+      </div>
+      <div class="user-section" id="userSection">
+        <button class="btn btn-secondary" onclick="showAuth()">Log In</button>
+      </div>
+    </div>
+  </div>
+  
+  <div class="categories" id="categories"></div>
+  <div class="grid" id="grid"></div>
+  
+  <div class="player-modal" id="player">
+    <div class="player-wrapper">
+      <button class="close-btn" onclick="closePlayer()">Close</button>
+      <iframe id="ytframe" allowfullscreen></iframe>
+    </div>
+  </div>
+  
+  <div class="auth-modal" id="authModal">
+    <div class="auth-box">
+      <h2 id="authTitle">Sign Up</h2>
+      <input type="text" id="authUsername" placeholder="Username" maxlength="20">
+      <input type="password" id="authPassword" placeholder="Password">
+      <button class="btn" onclick="handleAuth()">Create Account</button>
+      <div class="auth-toggle" onclick="toggleAuth()">Already have an account? Log in</div>
+    </div>
+  </div>
+  
+  <div class="footer">
+    Snip by devszain • Add to Home Screen for app experience
+  </div>
+
+<script>
+// CONFIG: SET YOUR ADMIN USERNAME HERE
+const OWNER_USERNAME = 'devszain'; // This username gets admin powers
+
+// ADD YOUR SNIPS HERE
+const snips = [
+  { 
+    id: 'dQw4w9WgXcQ', 
+    title: 'Welcome to Snip - First Upload', 
+    channel: 'Wumpgod',
+    duration: '3:32',
+    category: 'Intro'
+  },
+  { 
+    id: 'jNQXAC9IVRw', 
+    title: 'Building iOS Apps in 2026', 
+    channel: 'devszain',
+    duration: '12:45',
+    category: 'Tech'
+  }
+];
+
+// AUTH SYSTEM
+let currentUser = JSON.parse(localStorage.getItem('snip_user') || 'null');
+let users = JSON.parse(localStorage.getItem('snip_users') || '{}');
+let blockedSnips = JSON.parse(localStorage.getItem('snip_blocked') || '[]');
+let authMode = 'signup';
+
+function updateUserUI() {
+  const userSection = document.getElementById('userSection');
+  if (currentUser) {
+    const isAdmin = currentUser.username === OWNER_USERNAME;
+    userSection.innerHTML = `
+      ${isAdmin? '<div class="admin-badge">ADMIN</div>' : ''}
+      <div class="username">${currentUser.username}</div>
+      <button class="btn btn-secondary" onclick="logout()">Log Out</button>
+    `;
+  } else {
+    userSection.innerHTML = `<button class="btn btn-secondary" onclick="showAuth()">Log In</button>`;
+  }
+}
+
+function showAuth() {
+  document.getElementById('authModal').classList.add('active');
+}
+
+function hideAuth() {
+  document.getElementById('authModal').classList.remove('active');
+  document.getElementById('authUsername').value = '';
+  document.getElementById('authPassword').value = '';
+}
+
+function toggleAuth() {
+  authMode = authMode === 'signup'? 'login' : 'signup';
+  document.getElementById('authTitle').textContent = authMode === 'signup'? 'Sign Up' : 'Log In';
+  document.querySelector('.auth-box.btn').textContent = authMode === 'signup'? 'Create Account' : 'Log In';
+  document.querySelector('.auth-toggle').textContent = authMode === 'signup'? 'Already have an account? Log in' : 'Need an account? Sign up';
+}
+
+function handleAuth() {
+  const username = document.getElementById('authUsername').value.trim();
+  const password = document.getElementById('authPassword').value;
+  
+  if (!username ||!password) {
+    alert('Enter username and password');
+    return;
+  }
+  
+  if (username.length < 3) {
+    alert('Username must be 3+ characters');
+    return;
+  }
+  
+  if (authMode === 'signup') {
+    if (users[username]) {
+      alert('Username taken');
+      return;
+    }
+    users[username] = { password: password };
+    localStorage.setItem('snip_users', JSON.stringify(users));
+    currentUser = { username };
+    localStorage.setItem('snip_user', JSON.stringify(currentUser));
+    hideAuth();
+    updateUserUI();
+    renderSnips();
+  } else {
+    if (!users[username] || users[username].password!== password) {
+      alert('Invalid username or password');
+      return;
+    }
+    currentUser = { username };
+    localStorage.setItem('snip_user', JSON.stringify(currentUser));
+    hideAuth();
+    updateUserUI();
+    renderSnips();
+  }
+}
+
+function logout() {
+  localStorage.removeItem('snip_user');
+  currentUser = null;
+  updateUserUI();
+  renderSnips();
+}
+
+// MODERATION
+function isAdmin() {
+  return currentUser && currentUser.username === OWNER_USERNAME;
+}
+
+const categories = ['All',...new Set(snips.map(v => v.category))];
+let currentCat = 'All';
+
+function renderCats() {
+  document.getElementById('categories').innerHTML = categories
+   .map(c => `<button class="cat-btn ${c===currentCat?'active':''}" onclick="setCat('${c}')">${c}</button>`)
+   .join('');
+}
+
+function setCat(cat) {
+  currentCat = cat;
+  renderCats();
+  renderSnips();
+}
+
+function renderSnips(filter = '') {
+  const filtered = snips.filter(v => {
+    const matchCat = currentCat === 'All' || v.category === currentCat;
+    const matchSearch = v.title.toLowerCase().includes(filter.toLowerCase());
+    const isBlocked = blockedSnips.includes(v.id);
+    return matchCat && matchSearch && (isAdmin() ||!isBlocked);
+  });
+  
+  document.getElementById('grid').innerHTML = filtered.map(v => {
+    const isBlocked = blockedSnips.includes(v.id);
+    return `
+    <div class="snip-card ${isBlocked? 'moderated' : ''}" onclick="playSnip('${v.id}')">
+      <div class="thumb">
+        <img src="https://i.ytimg.com/vi/${v.id}/hqdefault.jpg" alt="${v.title}">
+        <div class="duration">${v.duration}</div>
+      </div>
+      <div class="snip-info">
+        <div class="snip-title">${v.title}</div>
+        <div class="snip-meta">
+          <span>${v.channel}</span>
+          ${isAdmin()? 
+            `<button class="delete-btn" onclick="deleteSnip(event, '${v.id}')">Delete</button>` : 
+            currentUser? `<button class="report-btn" onclick="reportSnip(event, '${v.id}')">Report</button>` : ''
+          }
+        </div>
+      </div>
+    </div>
+  `;
+  }).join('');
+}
+
+function playSnip(id) {
+  if (blockedSnips.includes(id) &&!isAdmin()) return;
+  document.getElementById('ytframe').src = `https://www.youtube.com/embed/${id}?autoplay=1`;
+  document.getElementById('player').classList.add('active');
+}
+
+function closePlayer() {
+  document.getElementById('ytframe').src = '';
+  document.getElementById('player').classList.remove('active');
+}
+
+function reportSnip(e, id) {
+  e.stopPropagation();
+  if (!currentUser) {
+    alert('Log in to report Snips');
+    return;
+  }
+  if (confirm('Report this Snip? It will be hidden from your feed.')) {
+    blockedSnips.push(id);
+    localStorage.setItem('snip_blocked', JSON.stringify(blockedSnips));
+    renderSnips();
+  }
+}
+
+function deleteSnip(e, id) {
+  e.stopPropagation();
+  if (confirm('Delete this Snip? This only hides it locally. Remove from code to delete permanently.')) {
+    blockedSnips.push(id);
+    localStorage.setItem('snip_blocked', JSON.stringify(blockedSnips));
+    renderSnips();
+  }
+}
+
+document.getElementById('search').addEventListener('input', e => renderSnips(e.target.value));
+
+updateUserUI();
+renderCats();
+renderSnips();
+</script>
+</body>
+</html>
