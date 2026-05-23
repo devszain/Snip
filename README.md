@@ -1,2 +1,2 @@
-# Snip.
+# Snip
 Social Media 
