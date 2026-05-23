@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Snip</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 400px; margin: 50px auto; padding: 20px; background: #0a0a0a; color: white; }
+    input, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: none; font-size: 16px; }
+    input { background: #1a1a1a; color: white; }
+    button { background: #ff0050; color: white; font-weight: bold; cursor: pointer; }
+    button:hover { opacity: 0.8; }
+    .hidden { display: none; }
+    #status { margin-top: 15px; padding: 10px; border-radius: 8px; background: #1a1a1a; word-break: break-word; }
+  </style>
+</head>
+<body>
+  <h1>Snip 2.0 🔥</h1>
+  
+  <div id="authSection">
+    <h3>Sign Up / Login</h3>
+    <input type="email" id="email" placeholder="Email">
+    <input type="password" id="password" placeholder="Password">
+    <input type="text" id="name" placeholder="Username">
+    <button id="signupBtn">Sign Up</button>
+    <button id="loginBtn">Login</button>
+    <button id="logoutBtn" class="hidden">Logout</button>
+  </div>
+
+  <div id="appSection" class="hidden">
+    <h3>Welcome <span id="userName"></span></h3>
+    <p>You're logged in! Upload feature coming next.</p>
+  </div>
+
+  <div id="status">Status: Ready</div>
+
+  <script type="module">
+    import { Client, Account, ID } from 'https://cdn.jsdelivr.net/npm/appwrite@15.0.0/+esm'
+
+    // FRA REGION ENDPOINT 👇
+    const client = new Client()
+      .setEndpoint('https://fra.cloud.appwrite.io/v1') 
+      .setProject('snip-3778');
+
+    const account = new Account(client);
+    const status = document.getElementById('status');
+
+    document.getElementById('signupBtn').onclick = async () => {
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const name = document.getElementById('name').value;
+      status.innerText = 'Status: Creating account...';
+      
+      try {
+        await account.create(ID.unique(), email, password, name);
+        await account.createEmailPasswordSession(email, password);
+        status.innerText = 'Status: ✅ Account created + logged in!';
+      } catch (error) {
+        status.innerText = `Status: ❌ ${error.message}`;
+        console.error(error);
+      }
+    };
+
+    document.getElementById('loginBtn').onclick = async () => {
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      status.innerText = 'Status: Logging in...';
+      
+      try {
+        await account.createEmailPasswordSession(email, password);
+        const user = await account.get();
+        status.innerText = 'Status: ✅ Logged in as ' + user.name;
+        checkAuth();
+      } catch (error) {
+        status.innerText = `Status: ❌ ${error.message}`;
+        console.error(error);
+      }
+    };
+
+    document.getElementById('logoutBtn').onclick = async () => {
+      await account.deleteSession('current');
+      status.innerText = 'Status: Logged out';
+      checkAuth();
+    };
+
+    async function checkAuth() {
+      try {
+        const user = await account.get();
+        document.getElementById('authSection').classList.add('hidden');
+        document.getElementById('appSection').classList.remove('hidden');
+        document.getElementById('logoutBtn').classList.remove('hidden');
+        document.getElementById('userName').innerText = user.name;
+      } catch (error) {
+        document.getElementById('authSection').classList.remove('hidden');
+        document.getElementById('appSection').classList.add('hidden');
+        document.getElementById('logoutBtn').classList.add('hidden');
+      }
+    }
+    
+    checkAuth();
+  </script>
+</body>
+</html>
