@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Snip</title>
+<script src="https://cdn.jsdelivr.net/npm/appwrite@15.0.0"></script>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { 
+    width: 100%; height: 100%; overflow: hidden; 
+    background: #000; font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  #feed { 
+    width: 100%; height: 100%; overflow-y: scroll; 
+    scroll-snap-type: y mandatory; -webkit-overflow-scrolling: touch;
+  }
+.video-container {
+    width: 100%; height: 100%; position: relative;
+    scroll-snap-align: start; background: #000;
+  }
+  video { width: 100%; height: 100%; object-fit: cover; }
+.overlay {
+    position: absolute; bottom: 80px; left: 12px; right: 80px;
+    color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+  }
+.username { font-weight: 600; font-size: 16px; margin-bottom: 4px; }
+.caption { font-size: 14px; }
+.actions {
+    position: absolute; bottom: 80px; right: 12px;
+    display: flex; flex-direction: column; gap: 20px; align-items: center;
+  }
+.action-btn {
+    width: 48px; height: 48px; border-radius: 50%;
+    background: rgba(255,255,255,0.2); backdrop-filter: blur(10px);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px; cursor: pointer; user-select: none;
+  }
+.action-btn:active { transform: scale(0.9); }
+.liked { background: rgba(255,59,92,0.6); }
+.count { color: #fff; font-size: 12px; margin-top: 4px; text-shadow: 0 1px 2px rgba(0,0,0,0.8); }
+  
+  /* Top bar */
+  #topBar {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 16px; background: linear-gradient(to bottom, rgba(0,0,0,0.6), transparent);
+  }
+.logo { color: #fff; font-weight: 700; font-size: 20px; }
+.top-btn {
+    padding: 8px 14px; border-radius: 20px; border: none;
+    background: #ff3b5c; color: #fff; font-weight: 600; cursor: pointer;
+  }
+  
+  /* Modals */
+.modal {
+    position: fixed; bottom: 0; left: 0; right: 0; height: 70%;
+    background: #111; border-radius: 16px 16px 0 0; z-index: 100;
+    transform: translateY(100%); transition: transform 0.3s ease;
+    display: flex; flex-direction: column;
+  }
+.modal.open { transform: translateY(0); }
+.modal-header {
+    padding: 16px; text-align: center; font-weight: 600; color: #fff;
+    border-bottom: 1px solid #333; position: relative;
+  }
+.close-btn {
+    position: absolute; right: 16px; top: 16px; font-size: 24px;
+    cursor: pointer; color: #aaa;
+  }
+.modal-content { flex: 1; overflow-y: auto; padding: 16px; color: #fff; }
+.input-wrap {
+    padding: 12px; border-top: 1px solid #333; display: flex; gap: 8px; flex-direction: column;
+  }
+.input {
+    padding: 12px 14px; border-radius: 8px; border: none;
+    background: #222; color: #fff; font-size: 14px; outline: none; width: 100%;
+  }
+.btn {
+    padding: 12px; border-radius: 8px; border: none;
+    background: #ff3b5c; color: #fff; font-weight: 600; cursor: pointer; width: 100%;
+  }
+  #overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+    z-index: 99; display: none;
+  }
+  #overlay.show { display: block; }
+  #authModal { height: 50%; }
+</style>
+</head>
+<body>
+
+<div id="topBar">
+  <div class="logo">Snip</div>
+  <div>
+    <button class="top-btn" id="uploadBtn" onclick="openUpload()" style="display:none">+</button>
+    <button class="top-btn" id="authBtn" onclick="openAuth()">Login</button>
+  </div>
+</div>
+
+<div id="feed"></div>
+
+<div id="overlay"></div>
+
+<!-- Auth Modal -->
+<div id="authModal" class="modal">
+  <div class="modal-header">
+    Account
+    <div class="close-btn" onclick="closeModal('authModal')">×</div>
+  </div>
+  <div class="modal-content">
+    <input id="emailInput" class="input" placeholder="Email" type="email" />
+    <input id="passwordInput" class="input" placeholder="Password" type="password" style="margin-top:8px" />
+    <input id="nameInput" class="input" placeholder="Username" style="margin-top:8px" />
+  </div>
+  <div class="input-wrap">
+    <button class="btn" onclick="login()">Login</button>
+    <button class="btn" onclick="register()" style="background:#333;margin-top:8px">Sign Up</button>
+  </div>
+</div>
+
+<!-- Upload Modal -->
+<div id="uploadModal" class="modal">
+  <div class="modal-header">
+    Upload Video
+    <div class="close-btn" onclick="closeModal('uploadModal')">×</div>
+  </div>
+  <div class="modal-content">
+    <input id="videoFile" class="input" type="file" accept="video/*" />
+    <input id="captionInput" class="input" placeholder="Caption" style="margin-top:8px" />
+  </div>
+  <div class="input-wrap">
+    <button class="btn" onclick="uploadVideo()">Post</button>
+  </div>
+</div>
+
+<!-- Comments Modal -->
+<div id="commentsModal" class="modal">
+  <div class="modal-header">
+    Comments
+    <div class="close-btn" onclick="closeModal('commentsModal')">×</div>
+  </div>
+  <div id="commentsList" class="modal-content"></div>
+  <div class="input-wrap" style="flex-direction:row">
+    <input id="commentInput" class="input" placeholder="Add a comment..." style="flex:1" />
+    <button class="btn" onclick="postComment()" style="width:auto;padding:10px 16px">Post</button>
+  </div>
+</div>
+
+<script>
+  const { Client, Databases, Account, Storage, ID, Query } = Appwrite;
+  
+  const client = new Client()
+  .setEndpoint('https://fra.cloud.appwrite.io/v1')
+  .setProject('snip-3778');
+    
+  const databases = new Databases(client);
+  const account = new Account(client);
+  const storage = new Storage(client);
+  
+  const DATABASE_ID = 'snip_db';
+  const VIDEOS_ID = 'videos';
+  const COMMENTS_ID = 'comments';
+  const LIKES_ID = 'likes';
+  const BUCKET_ID = 'videos'; // Create a Storage bucket called 'videos'
+  
+  let currentUser = null;
+  let currentVideoId = null;
+  let videos = [];
+  
+  // INIT
+  checkAuth();
+  loadFeed();
+  
+  async function checkAuth() {
+    try {
+      currentUser = await account.get();
+      document.getElementById('authBtn').innerText = currentUser.name || 'Account';
+      document.getElementById('uploadBtn').style.display = 'inline-block';
+    } catch(e) {
+      currentUser = null;
+    }
+  }
+  
+  // AUTH
+  function openAuth() {
+    if (currentUser) {
+      if (confirm('Logout?')) logout();
+    } else {
+      openModal('authModal');
+    }
+  }
+  
+  async function login() {
+    try {
+      await account.createEmailPasswordSession(
+        document.getElementById('emailInput').value,
+        document.getElementById('passwordInput').value
+      );
+      location.reload();
+    } catch(e) { alert(e.message); }
+  }
+  
+  async function register() {
+    try {
+      await account.create(
+        ID.unique(),
+        document.getElementById('emailInput').value,
+        document.getElementById('passwordInput').value,
+        document.getElementById('nameInput').value
+      );
+      await login();
+    } catch(e) { alert(e.message); }
+  }
+  
+  async function logout() {
+    await account.deleteSession('current');
+    location.reload();
+  }
+  
+  // FEED
+  async function loadFeed() {
+    try {
+      const res = await databases.listDocuments(DATABASE_ID, VIDEOS_ID, [Query.limit(20), Query.orderDesc('$createdAt')]);
+      videos = res.documents;
+      renderFeed();
+    } catch(e) { console.log(e); }
+  }
+  
+  async function renderFeed() {
+    const feed = document.getElementById('feed');
+    feed.innerHTML = '';
+    
+    for (let i = 0; i < videos.length; i++) {
+      const doc = videos[i];
+      const videoUrl = storage.getFileView(BUCKET_ID, doc.fileId);
+      const likeCount = await getLikeCount(doc.$id);
+      const isLiked = currentUser? await checkLiked(doc.$id) : false;
+      
+      const div = document.createElement('div');
+      div.className = 'video-container';
+      div.innerHTML = `
+        <video src="${videoUrl}" loop muted playsinline preload="metadata"></video>
+        <div class="overlay">
+          <div class="username">@${doc.username}</div>
+          <div class="caption">${doc.caption || ''}</div>
+        </div>
+        <div class="actions">
+          <div>
+            <div class="action-btn ${isLiked? 'liked' : ''}" onclick="toggleLike('${doc.$id}', this)">❤️</div>
+            <div class="count">${likeCount}</div>
+          </div>
+          <div class="action-btn" onclick="openComments('${doc.$id}')">💬</div>
+        </div>
+      `;
+      feed.appendChild(div);
+      if (i === 0) div.querySelector('video').play().catch(()=>{});
+    }
+    
+    feed.addEventListener('scroll', () => {
+      document.querySelectorAll('video').forEach(v => {
+        const rect = v.getBoundingClientRect();
+        if (rect.top >= -100 && rect.bottom <= window.innerHeight + 100) v.play().catch(()=>{});
+        else v.pause();
+      });
+    });
+  }
+  
+  // LIKES
+  async function getLikeCount(videoId) {
+    try {
+      const res = await databases.listDocuments(DATABASE_ID, LIKES_ID, [Query.equal('videoId', videoId), Query.limit(1)]);
+      return res.total;
+    } catch(e) { return 0; }
+  }
+  
+  async function checkLiked(videoId) {
+    if (!currentUser) return false;
+    try {
+      const res = await databases.listDocuments(DATABASE_ID, LIKES_ID, [
+        Query.equal('videoId', videoId),
+        Query.equal('userId', currentUser.$id),
+        Query.limit(1)
+      ]);
+      return res.total > 0;
+    } catch(e) { return false; }
+  }
+  
+  async function toggleLike(videoId, btn) {
+    if (!currentUser) return openAuth();
+    try {
+      const res = await databases.listDocuments(DATABASE_ID, LIKES_ID, [
+        Query.equal('videoId', videoId),
+        Query.equal('userId', currentUser.$id)
+      ]);
+      if (res.total > 0) {
+        await databases.deleteDocument(DATABASE_ID, LIKES_ID, res.documents[0].$id);
+        btn.classList.remove('liked');
+        btn.nextElementSibling.innerText = parseInt(btn.nextElementSibling.innerText) - 1;
+      } else {
+        await databases.createDocument(DATABASE_ID, LIKES_ID, ID.unique(), {
+          videoId: videoId,
+          userId: currentUser.$id
+        });
+        btn.classList.add('liked');
+        btn.nextElementSibling.innerText = parseInt(btn.nextElementSibling.innerText) + 1;
+      }
+    } catch(e) { alert(e.message); }
+  }
+  
+  // COMMENTS
+  function openComments(videoId) {
+    currentVideoId = videoId;
+    openModal('commentsModal');
+    loadComments(videoId);
+  }
+  
+  async function loadComments(videoId) {
+    try {
+      const res = await databases.listDocuments(DATABASE_ID, COMMENTS_ID, [
+        Query.equal('videoId', videoId),
+        Query.orderDesc('createdAt'),
+        Query.limit(50)
+      ]);
+      const list = document.getElementById('commentsList');
+      list.innerHTML = '';
+      if (res.documents.length === 0) {
+        list.innerHTML = '<p style="text-align:center;color:#aaa;margin-top:20px">No comments yet</p>';
+        return;
+      }
+      res.documents.forEach(doc => {
+        const div = document.createElement('div');
